@@ -1,17 +1,3 @@
--- -- create the structure here
--- DROP DATABASE IF EXISTS db_name;
--- CREATE DATABASE db_name;
-
--- USE db_name;
-
--- CREATE TABLE table(
---     id INT NOT NULL,
---     name VARCHAR(20) NOT NULL DEFAULT "Default value here",
--- );
-
-
--- source db/schema.sql  in terminal 
-
 DROP DATABASE IF EXISTS employee_db;
 
 CREATE DATABASE employee_db;

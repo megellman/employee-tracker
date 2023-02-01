@@ -1,8 +1,3 @@
--- create your actual values here 
--- run the schema once and run seed once
--- INSERT INTO table  (name) VALUES ("Beck")
--- INSERT INTO table (name) VALUES ("Joe")
-
 INSERT INTO department(name) 
 VALUES 
     ("HR"),

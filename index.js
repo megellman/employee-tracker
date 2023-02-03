@@ -207,45 +207,39 @@ async function getEmployees() {
 }
 
 async function updateEmployee() {
-    getEmployees().then(response => {
-        inquirer.prompt(
-            {
-                type: "list",
-                input: "Select the employee",
-                choices: response.map((employeeData) => {
-                    return employeeData.name
-                }),
-                name: "employee",
-            })
-            .then(answer => {
-                const selectedName = response.filter((employee) => {
-                    return employee.name == answer.employee
-                });
-                return getRoles().then(roles => {
-                    inquirer.prompt({
-                        type: "list",
-                        message: "Select the employee's new role",
-                        choices: roles.map((roleData) => {
-                            return roleData.title
-                        }),
-                        name: "role",
-                    })
-                        .then(input => {
-                            const roleInfo = roles.filter(roleData => {
-                                return roleData.title == input.role
-                            })
-                            db.query("UPDATE employee SET role_id = (?) WHERE id = (?)", [roleInfo[0].id, selectedName[0].id], function (err, results) {
-                                if (err) {
-                                    throw err;
-                                } else {
-                                    console.log(`${answer.employee}'s role has been updated to ${input.role}!`);
-                                    prompt();
-                                }
-                            })
-                        })
-                })
-            })
-    })
-}
+    const response = await getEmployees();
+    const answer = await inquirer.prompt(
+        {
+            type: "list",
+            input: "Select the employee",
+            choices: response.map((employeeData) => {
+                return employeeData.name
+            }),
+            name: "employee",
+        })
+    const selectedName = await response.filter((employee) => {
+        return employee.name == answer.employee
+    });
+    const roles = await getRoles();
+    const input = await inquirer.prompt({
+            type: "list",
+            message: "Select the employee's new role",
+            choices: roles.map((roleData) => {
+                return roleData.title
+            }),
+            name: "role",
+        })
+        const roleInfo = await roles.filter(roleData => {
+            return roleData.title == input.role
+        })
+        db.query("UPDATE employee SET role_id = (?) WHERE id = (?)", [roleInfo[0].id, selectedName[0].id], function (err, results) {
+            if (err) {
+                throw err;
+            } else {
+                console.log(`${answer.employee}'s role has been updated to ${input.role}!`);
+                prompt();
+            }
+        })
+    }
 
 prompt();

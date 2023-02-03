@@ -1,4 +1,5 @@
--- Active: 1675100044962@@127.0.0.1@3306
+-- Active: 1675309908012@@localhost@3306
+
 DROP DATABASE IF EXISTS employee_db;
 
 CREATE DATABASE employee_db;
@@ -30,6 +31,4 @@ CREATE TABLE employee(
     FOREIGN KEY(role_id) REFERENCES role(id),
     FOREIGN KEY(manager_id) REFERENCES employee(id)
 )
-
-
 

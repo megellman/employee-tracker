@@ -9,10 +9,10 @@ const db = mysql.createConnection(
         password: 'password',
         database: 'employee_db'
     },
-    console.log("Connected to the employee_db database.")
+    console.log("Connected to the employee_db database!")
 );
 
-
+// Homepage -- asks the intial question of what user wants and directs them from there
 function prompt() {
     inquirer.prompt(
         {
@@ -22,6 +22,7 @@ function prompt() {
             name: 'homepage'
         }
     )
+    // Shows all departments
         .then((response) => {
             if (response.homepage === 'view all departments') {
                 db.query('SELECT id AS "Department ID", name AS "Department Name" FROM department', function (err, result) {
@@ -32,6 +33,7 @@ function prompt() {
                         prompt();
                     }
                 });
+    // Shows all roles
             } else if (response.homepage === 'view all roles') {
                 db.query('SELECT role.title AS "Job Title", role.id AS "Role ID", department.name AS Department, role.salary AS Salary FROM role Left JOIN department ON role.department_id = department.id', function (err, result) {
                     if (err) {
@@ -41,6 +43,7 @@ function prompt() {
                         prompt();
                     }
                 });
+    // Shows all employees
             } else if (response.homepage === 'view all employees') {
                 db.query("SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name, role.salary, employee.manager_id FROM department JOIN role ON department.id = role.department_id JOIN employee ON employee.role_id = role.id;", function (err, result) {
                     if (err) {
@@ -50,6 +53,7 @@ function prompt() {
                         prompt();
                     }
                 });
+    // Redirects to another function 
             } else if (response.homepage === 'add a department') {
                 addDepartment();
             } else if (response.homepage === 'add a role') {
@@ -65,6 +69,7 @@ function prompt() {
         })
 };
 
+// Takes response from prompt and uses that in the query to create a new department
 function addDepartment() {
     inquirer.prompt(
         {
@@ -85,6 +90,7 @@ function addDepartment() {
         })
 };
 
+// Async query gets the department names and ids
 async function getDepartments() {
     return new Promise((resolve, reject) => {
         db.query('SELECT * FROM department', function (err, results) {
@@ -94,6 +100,7 @@ async function getDepartments() {
     })
 }
 
+// Creates a new role
 async function addRole() {
     getDepartments().then(response => {
         inquirer.prompt(
@@ -132,6 +139,7 @@ async function addRole() {
     })
 };
 
+// Gets manager id and name 
 async function getManagers() {
     return new Promise((resolve, reject) => {
         db.query("SELECT employee.id, CONCAT (first_name, ' ', last_name) AS name FROM employee", function (err, results) {
@@ -140,6 +148,8 @@ async function getManagers() {
         })
     })
 }
+
+// Gets role id and title
 async function getRoles() {
     return new Promise((resolve, reject) => {
         db.query("SELECT role.id, title FROM role", function (err, results) {
@@ -149,6 +159,7 @@ async function getRoles() {
     })
 }
 
+// Creates a new employee
 async function addEmployee() {
     const response = await getRoles();
     const input = await inquirer.prompt(
@@ -194,6 +205,7 @@ async function addEmployee() {
     });
 };
 
+// Get employee names and ids
 async function getEmployees() {
     return new Promise((resolve, reject) => {
         db.query("SELECT CONCAT(first_name, ' ', last_name) AS name, id, role_id FROM employee;", function (err, result) {
@@ -203,6 +215,7 @@ async function getEmployees() {
     })
 }
 
+// Updates an employees role
 async function updateEmployee() {
     const response = await getEmployees();
     const answer = await inquirer.prompt(

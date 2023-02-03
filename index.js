@@ -1,8 +1,6 @@
 const inquirer = require('inquirer');
 const mysql = require('mysql2');
 const consoleTable = require('console.table');
-const { response } = require('express');
-
 
 const db = mysql.createConnection(
     {
@@ -26,7 +24,7 @@ function prompt() {
     )
         .then((response) => {
             if (response.homepage === 'view all departments') {
-                db.query('SELECT * FROM department', function (err, result) {
+                db.query('SELECT id AS "Department ID", name AS "Department Name" FROM department', function (err, result) {
                     if (err) {
                         throw err;
                     } else {
@@ -35,7 +33,7 @@ function prompt() {
                     }
                 });
             } else if (response.homepage === 'view all roles') {
-                db.query('SELECT role.title, role.id, department.name AS department, role.salary FROM role Left JOIN department ON role.department_id = department.id', function (err, result) {
+                db.query('SELECT role.title AS "Job Title", role.id AS "Role ID", department.name AS Department, role.salary AS Salary FROM role Left JOIN department ON role.department_id = department.id', function (err, result) {
                     if (err) {
                         throw err;
                     } else {
@@ -44,7 +42,7 @@ function prompt() {
                     }
                 });
             } else if (response.homepage === 'view all employees') {
-                db.query('SELECT employee.id, employee.first_name AS first, employee.last_name AS last, role.title, department.name AS department, role.salary, employee.manager_id AS manager FROM department JOIN role ON department.id = role.department_id JOIN employee ON employee.role_id = role.id', function (err, result) {
+                db.query("SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name, role.salary, employee.manager_id FROM department JOIN role ON department.id = role.department_id JOIN employee ON employee.role_id = role.id;", function (err, result) {
                     if (err) {
                         throw err;
                     } else {
@@ -180,23 +178,23 @@ async function addEmployee() {
                         message: 'Select the employee\'s manager',
                         choices: managers.map(manager => manager.name),
                         name: 'manager',
-                })
-                .then(answer => {
-                    const selectedManager = managers.filter(manager => {
-                        return manager.name == answer.manager
                     })
-                    db.query("INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)", [input.firstName, input.lastName, selectedRole[0].id, selectedManager[0].id], function (err, result) {
-                        if (err) {
-                            throw err;
-                        } else {
-                            console.log(`${input.firstName} ${input.lastName} has been added!`);
-                            prompt();
-                        }
-                    });
+                        .then(answer => {
+                            const selectedManager = managers.filter(manager => {
+                                return manager.name == answer.manager
+                            })
+                            db.query("INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)", [input.firstName, input.lastName, selectedRole[0].id, selectedManager[0].id], function (err, result) {
+                                if (err) {
+                                    throw err;
+                                } else {
+                                    console.log(`${input.firstName} ${input.lastName} has been added!`);
+                                    prompt();
+                                }
+                            });
+                        });
                 });
             });
-    });
-})
+    })
 };
 
 async function getEmployees() {
@@ -210,36 +208,44 @@ async function getEmployees() {
 
 async function updateEmployee() {
     getEmployees().then(response => {
-        console.log(response)
         inquirer.prompt(
-            [{
+            {
                 type: "list",
                 input: "Select the employee",
                 choices: response.map((employeeData) => {
                     return employeeData.name
                 }),
                 name: "employee",
-            },
-            {
-                type: "input",
-                input: "Enter the new role",
-                name: "role",
-            }]
-        ).then(answer => {
-            const selectedName = response.filter((employee) => {
-                return response.name == answer.employee
             })
-            db.query("UPDATE employee SET role_id = (?) WHERE id = (?)", [selectedName.role_id, selectedName.id], function (err, results) {
-                if (err) {
-                    throw err;
-                } else {
-                    console.log(`${answer.employee}'s role has been updated to ${answer.role}!`);
-                    prompt();
-                }
+            .then(answer => {
+                const selectedName = response.filter((employee) => {
+                    return employee.name == answer.employee
+                });
+                return getRoles().then(roles => {
+                    inquirer.prompt({
+                        type: "list",
+                        message: "Select the employee's new role",
+                        choices: roles.map((roleData) => {
+                            return roleData.title
+                        }),
+                        name: "role",
+                    })
+                        .then(input => {
+                            const roleInfo = roles.filter(roleData => {
+                                return roleData.title == input.role
+                            })
+                            db.query("UPDATE employee SET role_id = (?) WHERE id = (?)", [roleInfo[0].id, selectedName[0].id], function (err, results) {
+                                if (err) {
+                                    throw err;
+                                } else {
+                                    console.log(`${answer.employee}'s role has been updated to ${input.role}!`);
+                                    prompt();
+                                }
+                            })
+                        })
+                })
             })
-        }
-        )
-    }
-    )
+    })
 }
+
 prompt();

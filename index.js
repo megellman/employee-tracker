@@ -18,7 +18,7 @@ function prompt() {
         {
             type: 'list',
             message: 'Select one option',
-            choices: ['view all departments', 'view all roles', 'view all employees', 'add a department', 'add a role', 'add an employee', 'update an employee role'],
+            choices: ['View all departments', 'View all roles', 'View all employees', 'Add a department', 'Add a role', 'Add an employee', 'Update an employee role', 'I\'m done'],
             name: 'homepage'
         }
     )
@@ -58,6 +58,9 @@ function prompt() {
                 addEmployee();
             } else if (response.homepage === 'update an employee role') {
                 updateEmployee();
+            } else if (response.homepage === 'I\'m done'){
+                console.log('Goodbye!');
+                process.exit();
             }
         })
 };
@@ -147,54 +150,48 @@ async function getRoles() {
 }
 
 async function addEmployee() {
-    getRoles().then(response => {
-        inquirer.prompt(
-            [{
-                type: "input",
-                input: "Enter employee first name",
-                name: "firstName",
-            },
-            {
-                type: "input",
-                input: "Enter employee last name",
-                name: "lastName",
-            },
-            {
-                type: "list",
-                input: "Select the employee's role",
-                choices: response.map((roleData) => {
-                    return roleData.title
-                }),
-                name: "role",
-            }]
-        )
-            .then(input => {
-                const selectedRole = response.filter(role => {
-                    return role.name == input.name
-                });
-                return getManagers().then(managers => {
-                    inquirer.prompt({
-                        type: 'list',
-                        message: 'Select the employee\'s manager',
-                        choices: managers.map(manager => manager.name),
-                        name: 'manager',
-                    })
-                        .then(answer => {
-                            const selectedManager = managers.filter(manager => {
-                                return manager.name == answer.manager
-                            })
-                            db.query("INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)", [input.firstName, input.lastName, selectedRole[0].id, selectedManager[0].id], function (err, result) {
-                                if (err) {
-                                    throw err;
-                                } else {
-                                    console.log(`${input.firstName} ${input.lastName} has been added!`);
-                                    prompt();
-                                }
-                            });
-                        });
-                });
-            });
+    const response = await getRoles();
+    const input = await inquirer.prompt(
+        [{
+            type: "input",
+            input: "Enter employee first name",
+            name: "firstName",
+        },
+        {
+            type: "input",
+            input: "Enter employee last name",
+            name: "lastName",
+        },
+        {
+            type: "list",
+            input: "Select the employee's role",
+            choices: response.map((roleData) => {
+                return roleData.title
+            }),
+            name: "role",
+        }]
+    )
+    const selectedRole = await response.filter(role => {
+        return role.name == input.name
+    });
+    const managers = await getManagers()
+    const answers = await inquirer.prompt({
+        type: 'list',
+        message: 'Select the employee\'s manager',
+        choices: managers.map(manager => manager.name),
+        name: 'manager',
     })
+    const selectedManager = await managers.filter(manager => {
+        return manager.name == answers.manager
+    })
+    db.query("INSERT INTO employee(first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)", [input.firstName, input.lastName, selectedRole[0].id, selectedManager[0].id], function (err, result) {
+        if (err) {
+            throw err;
+        } else {
+            console.log(`${input.firstName} ${input.lastName} has been added!`);
+            prompt();
+        }
+    });
 };
 
 async function getEmployees() {
@@ -222,24 +219,24 @@ async function updateEmployee() {
     });
     const roles = await getRoles();
     const input = await inquirer.prompt({
-            type: "list",
-            message: "Select the employee's new role",
-            choices: roles.map((roleData) => {
-                return roleData.title
-            }),
-            name: "role",
-        })
-        const roleInfo = await roles.filter(roleData => {
-            return roleData.title == input.role
-        })
-        db.query("UPDATE employee SET role_id = (?) WHERE id = (?)", [roleInfo[0].id, selectedName[0].id], function (err, results) {
-            if (err) {
-                throw err;
-            } else {
-                console.log(`${answer.employee}'s role has been updated to ${input.role}!`);
-                prompt();
-            }
-        })
-    }
+        type: "list",
+        message: "Select the employee's new role",
+        choices: roles.map((roleData) => {
+            return roleData.title
+        }),
+        name: "role",
+    })
+    const roleInfo = await roles.filter(roleData => {
+        return roleData.title == input.role
+    })
+    db.query("UPDATE employee SET role_id = (?) WHERE id = (?)", [roleInfo[0].id, selectedName[0].id], function (err, results) {
+        if (err) {
+            throw err;
+        } else {
+            console.log(`${answer.employee}'s role has been updated to ${input.role}!`);
+            prompt();
+        }
+    })
+}
 
 prompt();
